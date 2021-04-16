@@ -28,7 +28,8 @@ from .Extract import (
 	Get_video_info,
 	Req_get,
 	Get_playlist_videos,
-	Continuation
+	Continuation,
+	Search_results
 	)
 
 
@@ -251,7 +252,8 @@ class PlayList:
 	'''
 	def __init__(self,url:str, proxy:str="", process:bool=False) -> None:
 		self.http = HTTP.MakeObject(proxy=proxy)
-		logg.debug(f'Starting with proxy: {proxy}')
+		if proxy:
+			logg.debug(f'Starting with proxy: {proxy}')
 
 
 		# Holds playlist id `list=`
@@ -343,4 +345,87 @@ class PlayList:
 				print(f'Downloading {n.title}')
 				n.streams.get_both.low().download()
 
+
+class Search:
+	'''
+	This will search your query on youtube and will return videos.
+
+	:param str query:
+		Pass the query for search.
+	:param str country: (optional)
+		Pass the ISO 2 country code.
+	:param str proxy: (optional) pass the proxy url
+		example: 
+			``socks5://admin:admin@127.0.0.1:9050``
+			``http://admin:admin@127.0.0.1:8000``
+			``https://127.0.0.1:8080``
+	:param bool process: (optional) Process will trigger the function for making objects of
+		 :class:`Video <Video>` with the list of playlist videos default (False), When (True)
+		 it will take some extra time depend on your CPU and Internet speed. Process will use 10 workers 
+		 to create objects fasts.
+	
+	:rtype: None
+	:returns: None
+
+	'''
+
+	def __init__(self,query:str, country:str="", proxy:str="", process:bool=False) -> None:
+		self.http = HTTP.MakeObject(proxy=proxy)
+
+		if proxy:
+			logg.debug(f'Starting with proxy: {proxy}')
+		self.query = query
+		self.country = country
+		self.videos = []
+		self.obj_videos = []
+		self.search_start()
+		if process:
+			self.processing()
+	@property
+	def get_dict(self):
+		'''
+		This will return the list of :class:`Video <Video>` if available or will just return the dict of vid and name, 
+		Availability of :class:`Video <Video>` objects is depend on your ``Search(query,process=False)``, process will process
+		all videos to :class:`Video <Video>` objects.
+		'''
+		if self.obj_videos:
+			return self.obj_videos
+		return self.videos
+
+	@property
+	def first(self):
+		'''
+		Will return the first search video.
+
+		:rtype: :class:`Video <Video>`
+		:returns: This will return :class:`Video <Video>` of first search video.
+		'''
+		if self.obj_videos:
+			return self.obj_videos[0]
+		return Video(url=f'https://youtu.be/{self.videos[0]["vid"]}',http=self.http,name=f'{self.videos[0]["name"]}')
+
+	@property
+	def get_object(self):
+		'''
+		This will return the list of :class:`Video <Video>` objects, even when you ``process=False``.
+		'''
+		if not self.obj_videos:
+			self.processing()
+		return self.obj_videos
+
+	def processing(self):
+		'''
+		Processing will process all videos to :class:`Video <Video>` object
+		'''
+		func = lambda x,y: Video(url=f'https://youtu.be/{x["vid"]}',http=self.http,name=f'{x["name"]}',id=y)
+		with  concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+			for n in executor.map(func,self.videos,range(len(self.videos))):
+				logg.debug(f'CLASS playlist created video object {n}')
+				self.obj_videos.append(n)
+		logg.debug(f'All objects of :class:`Video` created')
+
+	def search_start(self):
+		status = Search_results(self.http, self.query, self.videos, self.country)
+		if status:
+			logg.debug(f'Search completed and found {len(self.videos)} videos')
 

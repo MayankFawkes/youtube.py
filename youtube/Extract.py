@@ -195,7 +195,7 @@ def Continuation(http:HTTP,videos:List[Dict[str,str]], token:str) -> str:
 		Pass the token if any.
 
 	:rtype: str
-	:returns: The new/next continuous token.
+	:returns: The new/next continuous token if available.
 	'''
 	params = {
 		"ctoken": token
@@ -218,3 +218,54 @@ def Continuation(http:HTTP,videos:List[Dict[str,str]], token:str) -> str:
 			raise ParsecError(f'Serious Bug please report here {__issues__}')
 
 	return token
+
+def Parse_search_json(data:Dict[str,str], videos:List[Dict[str,str]]) -> bool:
+	# print(json.dumps(data))
+	for n in data["contents"]["twoColumnSearchResultsRenderer"]["primaryContents"]["sectionListRenderer"]["contents"][0]["itemSectionRenderer"]["contents"]:
+		try:
+			det = n["videoRenderer"]
+			videos.append(dict(vid=det["videoId"],name=det["title"]["runs"][0]["text"]))
+		except:
+			continue
+	return True
+
+
+
+def Search_results(http:HTTP, query:str, videos:List[Dict[str,str]],country:str) -> bool:
+	'''
+	This will parse the initial json dict from web page source.
+	
+	:param HTTP http:
+		Pass the :class:`HTTP <HTTP>` object.
+	:param str query:
+		pass query for searching.
+	:param str videos:
+		pass the video list of dicts
+	:param str country:
+		pass the country code
+
+	:rtype: bool
+	:returns: true or false depend on search results.
+
+	'''
+	SEARCH_URL = "https://www.youtube.com/results"
+	PARAMS = {
+		"search_query":query,
+		"gl":country.upper()
+	}
+	HEADERS = {}
+
+	html = http._GET(SEARCH_URL, params=PARAMS,headers=HEADERS).text.replace("\n","")
+	try:
+		match = compile(r'var ytInitialData = (.*?);')
+		f = findall(match, html)[0]
+		f = json.loads(f)
+	except:
+		logg.debug(f'RegexError we cannot found {match}')
+		raise RegexError(f'RegexError we cannot found {match}')
+
+	if f:
+		if Parse_search_json(f,videos):
+			return True
+		else:
+			return False

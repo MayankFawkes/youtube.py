@@ -1,4 +1,4 @@
-[![banner](https://github.com/youtube-py/youtube.py/raw/master/img/header.jpg)](https://youtube-python.mayankfawkes.xyz/)
+[![banner](https://github.com/youtube-py/youtube.py/raw/master/img/header.png)](https://youtube-python.mayankfawkes.xyz/)
 
 ![rtd](https://readthedocs.org/projects/youtube-python/badge/?version=latest)
 ![license](https://img.shields.io/github/license/youtube-py/youtube.py)
@@ -48,6 +48,7 @@ $ sudo apt install ffmpeg
 * Command line input available
 * Supports FFMPEG
 * Can parsec youtube video details
+* Youtube Search, Video, PlayList
 
 # Basic
 

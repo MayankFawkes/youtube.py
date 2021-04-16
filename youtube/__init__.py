@@ -5,7 +5,7 @@ Youtube.py is really lite python liberary with ultra fast downloader
 
 from .Config import (__title__,__version__,__issues__,
 	__author__,__license__, __copyright__, __github__)
-from .__main__ import Video, PlayList, HIGH, LOW, MID
+from .__main__ import Video, PlayList, HIGH, LOW, MID, Search
 from .Connection import HTTP
 from .Stream import Stream
 from .Stream import Queue
